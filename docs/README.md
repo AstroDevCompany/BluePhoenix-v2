@@ -29,3 +29,7 @@ BluePhoenix is a project manager for developers (and for anything else you work 
 - [Updates](updates.md)
 - [Keyboard shortcuts](shortcuts.md)
 - [Troubleshooting and FAQ](troubleshooting.md)
+
+---
+
+BluePhoenix is developed by [MintFlow Technologies](https://mintflow.dev). Lead developer: Luca Montanari.

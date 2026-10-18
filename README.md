@@ -31,3 +31,7 @@ ios/            SwiftUI companion app
 ## Updates
 
 The app compares its version with `bluephoenix-v.json` and fetches installer links from `bluephoenix-d.json` in the MintFlow-Releases repository. Set the new version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json` before building a release.
+
+## Credits
+
+Developed by [MintFlow Technologies](https://mintflow.dev). Lead developer: Luca Montanari.

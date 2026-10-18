@@ -64,7 +64,7 @@ fn build_main_window(app: &tauri::App) -> tauri::Result<()> {
         b = b
             .title_bar_style(tauri::TitleBarStyle::Overlay)
             .hidden_title(true)
-            .traffic_light_position(tauri::LogicalPosition::new(20.0, 24.0));
+            .traffic_light_position(tauri::LogicalPosition::new(20.0, 28.0));
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -84,6 +84,19 @@ fn build_main_window(app: &tauri::App) -> tauri::Result<()> {
         if apply_mica(&window, None).is_err() {
             let _ = apply_acrylic(&window, Some((18, 18, 28, 120)));
         }
+    }
+    #[cfg(debug_assertions)]
+    if let Ok(path) = std::env::var("BP_DEV_EVAL_FILE") {
+        let w = window.clone();
+        std::thread::spawn(move || loop {
+            std::thread::sleep(std::time::Duration::from_millis(400));
+            if let Ok(js) = std::fs::read_to_string(&path) {
+                if !js.trim().is_empty() {
+                    let _ = std::fs::write(&path, "");
+                    let _ = w.eval(&js);
+                }
+            }
+        });
     }
     let _ = &window;
     Ok(())

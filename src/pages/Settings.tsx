@@ -5,6 +5,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Field, Segmented, Spinner, Toggle } from "../components/ui";
 import { SyncSection } from "../components/SyncSection";
+import { openExternal } from "../lib/actions";
 import { api, errMsg } from "../lib/api";
 import { useStore } from "../lib/store";
 import { ACCENTS } from "../lib/theme";
@@ -278,7 +279,7 @@ function UpdatesSection() {
 // ---------- page ----------
 
 export default function Settings() {
-  const { settings, setSetting, editors, terminals } = useStore();
+  const { settings, setSetting, editors, terminals, system } = useStore();
   const [params] = useSearchParams();
   const section = params.get("section");
 
@@ -346,6 +347,22 @@ export default function Settings() {
           <p className="text-[13px] text-[var(--fg-muted)]">
             BluePhoenix keeps your projects, to-dos and time in one place. Your data is stored locally and only leaves your computer when you enable cloud sync or use a cloud AI provider.
           </p>
+          <div className="divider my-4" />
+          <div className="flex flex-wrap items-center gap-5">
+            <button className="cursor-pointer" onClick={() => openExternal("https://mintflow.dev")} aria-label="Visit mintflow.dev">
+              <img src="/brand/mintflow-logo.webp" alt="MintFlow" className="h-10 w-auto" draggable={false} />
+            </button>
+            <div className="text-[13px]">
+              <div className="font-semibold">Developed by MintFlow Technologies</div>
+              <div className="text-[var(--fg-muted)]">Lead developer: Luca Montanari</div>
+              <button className="mt-0.5 cursor-pointer text-[var(--accent)] hover:underline" onClick={() => openExternal("https://mintflow.dev")}>
+                mintflow.dev
+              </button>
+            </div>
+            <div className="ml-auto text-right text-xs text-[var(--fg-faint)]">
+              BluePhoenix {system?.version}
+            </div>
+          </div>
         </Section>
       </div>
     </div>
