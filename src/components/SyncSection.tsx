@@ -122,7 +122,7 @@ export function SyncSection() {
             label="Database connection string"
             hint={
               kind === "neon"
-                ? "Create a free project at neon.tech, then copy the connection string from the dashboard. Use the direct connection (turn off “Connection pooling”)."
+                ? "Create a free project at neon.tech, then copy the connection string from the dashboard. Both the direct and the pooled connection string work."
                 : "Any PostgreSQL 12+ database you can reach, such as Supabase, Railway or your own server."
             }
           >

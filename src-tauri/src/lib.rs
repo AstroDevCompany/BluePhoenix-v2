@@ -85,19 +85,6 @@ fn build_main_window(app: &tauri::App) -> tauri::Result<()> {
             let _ = apply_acrylic(&window, Some((18, 18, 28, 120)));
         }
     }
-    #[cfg(debug_assertions)]
-    if let Ok(path) = std::env::var("BP_DEV_EVAL_FILE") {
-        let w = window.clone();
-        std::thread::spawn(move || loop {
-            std::thread::sleep(std::time::Duration::from_millis(400));
-            if let Ok(js) = std::fs::read_to_string(&path) {
-                if !js.trim().is_empty() {
-                    let _ = std::fs::write(&path, "");
-                    let _ = w.eval(&js);
-                }
-            }
-        });
-    }
     let _ = &window;
     Ok(())
 }

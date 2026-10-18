@@ -7,8 +7,8 @@ What syncs: project names, descriptions, types, favourites, links, to-dos, notes
 ## Set up Neon (about two minutes)
 
 1. Sign in at [neon.tech](https://neon.tech) and create a project.
-2. On the project dashboard open **Connect** and turn **Connection pooling** *off*.
-3. Copy the connection string. It looks like `postgresql://user:password@ep-something.region.aws.neon.tech/neondb?sslmode=require`.
+2. On the project dashboard open **Connect** and copy the connection string (the direct and the pooled one both work).
+3. Keep the whole string, including `?sslmode=require`. It looks like `postgresql://user:password@ep-something.region.aws.neon.tech/neondb?sslmode=require`.
 
 ## Connect the desktop app
 
@@ -38,5 +38,5 @@ If you change the same item on two devices before they sync, the **most recent c
 ## Troubleshooting
 
 - **"Last attempt failed"**: the message says why. Typical causes are a wrong password, an expired Neon branch, or no internet.
-- **Authentication or pooler errors**: use the direct (non-pooled) connection string.
+- **Authentication errors**: copy the connection string again from Neon; passwords can be reset there.
 - **Something looks missing on one device**: press **Sync now** on both devices. Clocks that are minutes apart can reorder very close edits, so keep automatic date and time on.

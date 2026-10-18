@@ -61,7 +61,24 @@ step "Installing JavaScript dependencies"
 pnpm install --frozen-lockfile || pnpm install
 
 step "Building BluePhoenix (this takes a few minutes the first time)"
-pnpm tauri build --bundles app,dmg ${TARGET_ARGS[@]+"${TARGET_ARGS[@]}"}
+if ! pnpm tauri build --bundles app,dmg ${TARGET_ARGS[@]+"${TARGET_ARGS[@]}"}; then
+  # The styled DMG is made by scripting Finder, which can fail (for example while Finder is busy).
+  # The .app is already built at that point, so fall back to a plain DMG.
+  APP_FALLBACK=$(ls -d "$OUT_DIR"/macos/*.app 2>/dev/null | head -1 || true)
+  [ -n "$APP_FALLBACK" ] || fail "The build failed. See the messages above."
+  printf '\n\033[1;33m! The styled DMG step failed; creating a plain DMG instead.\033[0m\n'
+  for d in $(mount | grep -E "/Volumes/dmg\." | awk '{print $1}'); do diskutil eject "$d" >/dev/null 2>&1 || true; done
+  rm -f "$OUT_DIR"/macos/rw.*.dmg
+  mkdir -p "$OUT_DIR/dmg"
+  VERSION=$(node -p "require('./package.json').version")
+  ARCH=$(uname -m); [ "$ARCH" = "arm64" ] && ARCH=aarch64
+  [ "$UNIVERSAL" = 1 ] && ARCH=universal
+  STAGE=$(mktemp -d)
+  cp -R "$APP_FALLBACK" "$STAGE/"
+  ln -s /Applications "$STAGE/Applications"
+  hdiutil create -volname "BluePhoenix" -srcfolder "$STAGE" -ov -format UDZO "$OUT_DIR/dmg/BluePhoenix_${VERSION}_${ARCH}.dmg" >/dev/null
+  rm -rf "$STAGE"
+fi
 
 step "Done"
 APP=$(ls -d "$OUT_DIR"/macos/*.app 2>/dev/null | head -1 || true)
