@@ -1,0 +1,131 @@
+import { create } from "zustand";
+import { api, errMsg } from "./api";
+import { applyTheme } from "./theme";
+import type { AppInfo, Command, GitStatus, ProjectSummary, Settings, SystemInfo } from "./types";
+
+export interface Toast {
+  id: number;
+  kind: "success" | "error" | "info";
+  title: string;
+  detail?: string;
+}
+
+interface State {
+  ready: boolean;
+  system: SystemInfo | null;
+  settings: Settings;
+  projects: ProjectSummary[];
+  statuses: Record<string, GitStatus | null>;
+  commands: Record<string, Command[]>;
+  editors: AppInfo[];
+  terminals: AppInfo[];
+  toasts: Toast[];
+  paletteOpen: boolean;
+  addProjectOpen: boolean;
+  /** project id -> label of the running action */
+  busy: Record<string, string | undefined>;
+  update: { latest: string; downloadUrl: string | null } | null;
+
+  init: () => Promise<void>;
+  loadProjects: () => Promise<void>;
+  refreshStatus: (id: string) => Promise<GitStatus | null>;
+  refreshAllStatuses: () => Promise<void>;
+  loadCommands: (id: string) => Promise<Command[]>;
+  setSetting: (key: string, value: string) => Promise<void>;
+  toast: (t: Omit<Toast, "id">) => void;
+  dismissToast: (id: number) => void;
+  setPalette: (open: boolean) => void;
+  setAddProject: (open: boolean) => void;
+  setBusy: (id: string, label?: string) => void;
+  setUpdate: (u: State["update"]) => void;
+}
+
+let toastId = 1;
+
+export const useStore = create<State>((set, get) => ({
+  ready: false,
+  system: null,
+  settings: {},
+  projects: [],
+  statuses: {},
+  commands: {},
+  editors: [],
+  terminals: [],
+  toasts: [],
+  paletteOpen: false,
+  addProjectOpen: false,
+  busy: {},
+  update: null,
+
+  init: async () => {
+    try {
+      const [system, settings, editors, terminals] = await Promise.all([
+        api.systemInfo(),
+        api.settings(),
+        api.editors(),
+        api.terminals(),
+      ]);
+      document.documentElement.classList.add(`os-${system.platform}`);
+      document.body.classList.add(`os-${system.platform}`);
+      set({ system, settings, editors, terminals });
+      applyTheme(settings.theme ?? "system", settings.accent);
+      await get().loadProjects();
+    } catch (e) {
+      get().toast({ kind: "error", title: "Could not start BluePhoenix", detail: errMsg(e) });
+    } finally {
+      set({ ready: true });
+    }
+    get().refreshAllStatuses();
+  },
+
+  loadProjects: async () => {
+    try {
+      set({ projects: await api.projects() });
+    } catch (e) {
+      get().toast({ kind: "error", title: "Could not load projects", detail: errMsg(e) });
+    }
+  },
+
+  refreshStatus: async (id) => {
+    const p = get().projects.find((x) => x.id === id);
+    if (!p || !p.path) return null;
+    try {
+      const s = await api.gitStatus(p.path);
+      set((st) => ({ statuses: { ...st.statuses, [id]: s } }));
+      return s;
+    } catch {
+      set((st) => ({ statuses: { ...st.statuses, [id]: null } }));
+      return null;
+    }
+  },
+
+  refreshAllStatuses: async () => {
+    await Promise.all(get().projects.map((p) => get().refreshStatus(p.id)));
+  },
+
+  loadCommands: async (id) => {
+    const cmds = await api.commands(id).catch(() => [] as Command[]);
+    set((st) => ({ commands: { ...st.commands, [id]: cmds } }));
+    return cmds;
+  },
+
+  setSetting: async (key, value) => {
+    set((st) => ({ settings: { ...st.settings, [key]: value } }));
+    await api.setSetting(key, value);
+    if (key === "theme" || key === "accent") {
+      const s = get().settings;
+      applyTheme(s.theme ?? "system", s.accent);
+    }
+  },
+
+  toast: (t) => {
+    const id = toastId++;
+    set((st) => ({ toasts: [...st.toasts, { ...t, id }] }));
+    setTimeout(() => get().dismissToast(id), t.kind === "error" ? 9000 : 4500);
+  },
+  dismissToast: (id) => set((st) => ({ toasts: st.toasts.filter((t) => t.id !== id) })),
+  setPalette: (paletteOpen) => set({ paletteOpen }),
+  setAddProject: (addProjectOpen) => set({ addProjectOpen }),
+  setBusy: (id, label) => set((st) => ({ busy: { ...st.busy, [id]: label } })),
+  setUpdate: (update) => set({ update }),
+}));

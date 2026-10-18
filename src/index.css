@@ -1,0 +1,463 @@
+@import "tailwindcss";
+@import "@xterm/xterm/css/xterm.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", Inter, system-ui,
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+/* ---------- theme tokens ---------- */
+:root {
+  --accent: #4f8cff;
+  --accent-2: #8b5cf6;
+  --accent-fg: #ffffff;
+  --fg: #0f172a;
+  --fg-muted: #475569;
+  --fg-faint: #7b8794;
+  --glass: rgba(255, 255, 255, 0.52);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --line: rgba(15, 23, 42, 0.1);
+  --hover: rgba(15, 23, 42, 0.06);
+  --shadow: 0 10px 34px rgba(36, 52, 110, 0.13);
+  --bg1: rgba(222, 234, 255, 0.82);
+  --bg2: rgba(241, 232, 255, 0.8);
+  --bg3: rgba(255, 234, 224, 0.82);
+  --ok: #16a34a;
+  --warn: #d97706;
+  --bad: #dc2626;
+  --info: #2563eb;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --fg: #e8ebf7;
+  --fg-muted: #aab1cb;
+  --fg-faint: #7c84a3;
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(24, 26, 48, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.11);
+  --line: rgba(255, 255, 255, 0.1);
+  --hover: rgba(255, 255, 255, 0.08);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  --bg1: rgba(9, 13, 32, 0.8);
+  --bg2: rgba(24, 15, 62, 0.78);
+  --bg3: rgba(42, 17, 30, 0.8);
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --info: #60a5fa;
+  color-scheme: dark;
+}
+
+/* Platforms without native blur (Linux) get opaque gradients. */
+.os-linux {
+  --bg1: #dee9ff;
+  --bg2: #f0e7ff;
+  --bg3: #ffeae0;
+}
+.os-linux[data-theme="dark"],
+:root[data-theme="dark"] .os-linux {
+  --bg1: #090d20;
+  --bg2: #180f3e;
+  --bg3: #2a111e;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--fg);
+  background:
+    radial-gradient(900px 500px at 12% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(800px 520px at 100% 105%, color-mix(in srgb, var(--accent-2) 20%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea,
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--fg) 25%, transparent) transparent;
+}
+
+/* ---------- components ---------- */
+@layer components {
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-radius: 16px;
+  }
+  .glass-strong {
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(36px) saturate(180%);
+    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    border-radius: 16px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 13px;
+    white-space: nowrap;
+    color: var(--fg);
+    background: var(--glass);
+    border: 1px solid var(--line);
+    transition: background 0.12s, transform 0.06s, opacity 0.12s;
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--hover);
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    color: var(--accent-fg);
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--accent-2)));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 38%, transparent);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--accent-2)));
+    filter: brightness(1.08);
+  }
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+  }
+  .btn-danger {
+    color: var(--bad);
+  }
+  .btn-icon {
+    width: 32px;
+    padding: 0;
+  }
+  .btn-sm {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+  .input {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--glass-strong) 60%, transparent);
+    color: var(--fg);
+    outline: none;
+    font-size: 13px;
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  textarea.input {
+    height: auto;
+    padding: 8px 10px;
+    resize: vertical;
+    line-height: 1.45;
+  }
+  .input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  select.input {
+    appearance: none;
+    padding-right: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b93a7' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--pill, var(--fg-faint)) 16%, transparent);
+    color: var(--pill, var(--fg-muted));
+  }
+  .menu {
+    min-width: 200px;
+    padding: 5px;
+    border-radius: 12px;
+  }
+  .menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--fg);
+  }
+  .menu-item:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .menu-item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .menu-sep {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--line);
+  }
+  .divider {
+    height: 1px;
+    background: var(--line);
+  }
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fg-muted);
+    margin-bottom: 5px;
+    display: block;
+  }
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tab:hover {
+    background: var(--hover);
+  }
+  .tab[data-active="true"] {
+    color: var(--fg);
+    background: var(--glass-strong);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  }
+  .segmented {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 11px;
+    background: var(--hover);
+    gap: 2px;
+  }
+  .segmented button {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    cursor: pointer;
+  }
+  .segmented button[data-active="true"] {
+    background: var(--glass-strong);
+    color: var(--fg);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  }
+  .row-hover:hover {
+    background: var(--hover);
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+}
+
+/* ---------- markdown ---------- */
+.md {
+  line-height: 1.6;
+  font-size: 14px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.md > *:first-child {
+  margin-top: 0;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  font-weight: 700;
+  margin: 1.1em 0 0.4em;
+  line-height: 1.25;
+}
+.md h1 {
+  font-size: 1.5em;
+}
+.md h2 {
+  font-size: 1.25em;
+}
+.md h3 {
+  font-size: 1.08em;
+}
+.md p,
+.md ul,
+.md ol,
+.md pre,
+.md blockquote,
+.md table {
+  margin: 0.6em 0;
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+.md ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.md li.task-list-item {
+  list-style: none;
+  margin-left: -1.2em;
+}
+.md a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--hover);
+}
+.md pre {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+  overflow-x: auto;
+}
+.md pre code {
+  padding: 0;
+  background: transparent;
+}
+.md blockquote {
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  color: var(--fg-muted);
+}
+.md table {
+  border-collapse: collapse;
+}
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 4px 9px;
+}
+.md hr {
+  border: 0;
+  height: 1px;
+  background: var(--line);
+  margin: 1em 0;
+}
+
+/* ---------- codemirror ---------- */
+.cm-editor {
+  background: transparent !important;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+.cm-gutters {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+/* ---------- terminal ---------- */
+.xterm {
+  padding: 8px;
+  height: 100%;
+}
+.xterm-viewport {
+  background: transparent !important;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop {
+  animation: pop 0.14s ease-out;
+}
+
+/* ---------- cmdk palette ---------- */
+[cmdk-group-heading] {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+[cmdk-item] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+[cmdk-item][data-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}

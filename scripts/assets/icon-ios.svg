@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b2a63"/><stop offset="0.55" stop-color="#2a1d6e"/><stop offset="1" stop-color="#4a1f4f"/>
+    </linearGradient>
+    <linearGradient id="fl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5aa0ff"/><stop offset="0.55" stop-color="#9b6bff"/><stop offset="1" stop-color="#ff8a3d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#7aa8ff" stop-opacity="0.45"/><stop offset="1" stop-color="#7aa8ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+  <g transform="translate(192 176) scale(10)">
+    <path d="M32 4c2 9 11 13 14 22 2 6 0 11-3 15 6-2 10-8 10-15 7 7 9 18 3 27-5 8-15 11-24 11S13 61 8 53c-6-9-4-20 3-27 0 7 4 13 10 15-3-4-5-9-3-15 3-9 12-13 14-22z" fill="url(#fl)"/>
+    <path d="M32 26c4 6 8 9 8 15a8 8 0 0 1-16 0c0-6 4-9 8-15z" fill="#fff" fill-opacity="0.94"/>
+  </g>
+</svg>

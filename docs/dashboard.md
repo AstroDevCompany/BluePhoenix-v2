@@ -1,0 +1,35 @@
+# The dashboard
+
+The dashboard lists all your projects as cards. Starred projects and recently opened ones come first.
+
+## What a card shows
+
+- **Title** and, if you wrote one, a short **description**. The project type (for example Tauri or Python) appears next to the title.
+- **Branch row:** the branch your folder is on right now (not the repository's default branch) and its state:
+
+  | Badge | Meaning |
+  | --- | --- |
+  | **Up to date** | Nothing to commit, nothing to push or pull. |
+  | **N uncommitted changes** | You have edited, staged or new files. |
+  | **N to push** | You have commits that are not on the remote yet. |
+  | **N to pull** | The remote has commits you do not have. Run **Fetch** first to refresh this number. |
+  | **Diverged** | Both of the above. |
+  | **N conflicts** | A merge needs your attention. |
+  | **No upstream** | The branch is not linked to a remote branch yet. A push will set that up. |
+  | **Not a git repo** | The folder is not under git. Open the project's Git tab to run `git init`. |
+
+- **Facts:** total time tracked, number of open to-dos, and when the project was last updated (the newest of your last commit, to-do or time entry).
+- **Actions** below the divider:
+  - **Open in …** opens the folder in your default editor. The arrow lets you pick another editor, the embedded terminal, your system terminal, or reveal the folder.
+  - **Run command** (blue) runs the project's main command, usually the build. The arrow lists all the project's commands so you can run another one instead.
+
+## Star and menu
+
+- The **star** at the top right of a card adds the project to your favourites. Use the **Favorites** filter at the top of the dashboard to show only those.
+- The **⋯** menu has: open in terminal, reveal folder, fetch, pull, push, stash changes, apply last stash, open GitHub, open website, edit and remove project.
+
+Click anywhere else on the card to open the full project page.
+
+## Keeping it fresh
+
+Branch states refresh when you bring the window to the front and once a minute. Fetch, pull and push buttons refresh them immediately.
