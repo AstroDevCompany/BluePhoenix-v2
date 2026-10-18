@@ -107,6 +107,17 @@ pub fn run() {
             app.manage(db);
             build_main_window(app)?;
             sync::start_background(app.handle().clone());
+            {
+                // Start Ollama / LM Studio together with BluePhoenix when it is the chosen local provider.
+                use tauri::Emitter;
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let db = handle.state::<db::Db>();
+                    if let Some(status) = ai::ensure_local_server(&db, true).await {
+                        let _ = handle.emit("local-ai", status);
+                    }
+                });
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -177,6 +188,7 @@ pub fn run() {
             ai::ai_complete,
             ai::secret_set,
             ai::secret_has,
+            ai::ai_ensure_local,
             ai::llama_start,
             ai::llama_stop,
             // sync

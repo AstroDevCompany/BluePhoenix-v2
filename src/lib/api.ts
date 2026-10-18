@@ -104,6 +104,7 @@ export const api = {
     invoke<string>("ai_complete", { system, prompt, maxTokens, jsonMode }),
   secretSet: (name: string, value: string) => invoke<void>("secret_set", { name, value }),
   secretHas: (name: string) => invoke<boolean>("secret_has", { name }),
+  aiEnsureLocal: () => invoke<{ provider: string; state: "running" | "started" | "failed"; message: string } | null>("ai_ensure_local"),
   llamaStart: (ggufPath: string, port?: number) => invoke<string>("llama_start", { ggufPath, port }),
   llamaStop: () => invoke<void>("llama_stop"),
 

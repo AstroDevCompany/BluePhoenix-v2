@@ -64,6 +64,7 @@ function AiSection() {
     if (!prov) return;
     setBusy("models");
     try {
+      if (prov.local) await api.aiEnsureLocal().catch(() => null);
       const list = await api.aiModels(prov.id, baseUrl || undefined, keyDraft || undefined);
       setModels(list);
       if (list.length && !model) await setSetting(`ai.model.${pid}`, list[0]);
@@ -160,6 +161,16 @@ function AiSection() {
               <button className="btn shrink-0" onClick={() => void api.llamaStop()}>Stop</button>
             </div>
           </Field>
+        )}
+
+        {mode === "local" && (pid === "ollama" || pid === "lmstudio") && (
+          <div className="flex items-center justify-between gap-6">
+            <div>
+              <div className="text-[13.5px] font-medium">Start {prov?.name} with BluePhoenix</div>
+              <div className="text-xs text-[var(--fg-faint)]">If it is not running when BluePhoenix opens, BluePhoenix starts it for you.</div>
+            </div>
+            <Toggle checked={(settings["ai.autostart"] ?? "true") === "true"} onChange={(v) => void setSetting("ai.autostart", String(v))} label="Start automatically" />
+          </div>
         )}
 
         <Field label="Model">

@@ -250,6 +250,139 @@ pub async fn ai_complete(
     Ok(text)
 }
 
+// ---------- auto-start of local servers (Ollama, LM Studio) ----------
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalAiStatus {
+    pub provider: String,
+    /// "running" (already up), "started" (we launched it) or "failed"
+    pub state: String,
+    pub message: String,
+}
+
+fn is_local_url(base: &str) -> bool {
+    let host = base.split("://").nth(1).unwrap_or(base).split(['/', ':']).next().unwrap_or("");
+    matches!(host, "localhost" | "127.0.0.1" | "[::1]" | "0.0.0.0")
+}
+
+async fn server_is_up(base: &str) -> bool {
+    let Ok(client) = reqwest::Client::builder().timeout(Duration::from_millis(1500)).build() else {
+        return false;
+    };
+    client.get(format!("{}/models", base.trim_end_matches('/'))).send().await.is_ok()
+}
+
+fn detached(cmd: &mut Command) -> std::io::Result<Child> {
+    cmd.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd.spawn()
+}
+
+/// Returns Ok(true) if something was launched, Ok(false) if the program is not installed.
+fn launch_ollama() -> Result<bool> {
+    if cfg!(target_os = "macos") {
+        let home_app = dirs::home_dir().map(|h| h.join("Applications/Ollama.app"));
+        if std::path::Path::new("/Applications/Ollama.app").exists() || home_app.is_some_and(|p| p.exists()) {
+            detached(Command::new("open").args(["-g", "-a", "Ollama"]))?;
+            return Ok(true);
+        }
+    }
+    if cfg!(windows) {
+        if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+            let exe = std::path::Path::new(&local).join("Programs/Ollama/ollama app.exe");
+            if exe.exists() {
+                detached(&mut Command::new(exe))?;
+                return Ok(true);
+            }
+        }
+    }
+    if let Ok(bin) = which::which("ollama") {
+        detached(Command::new(bin).arg("serve"))?;
+        return Ok(true);
+    }
+    Ok(false)
+}
+
+fn launch_lmstudio() -> Result<bool> {
+    let lms = which::which("lms").ok().or_else(|| {
+        let p = dirs::home_dir()?.join(".lmstudio/bin").join(if cfg!(windows) { "lms.exe" } else { "lms" });
+        p.exists().then_some(p)
+    });
+    if let Some(lms) = lms {
+        detached(Command::new(lms).args(["server", "start"]))?;
+        return Ok(true);
+    }
+    if cfg!(target_os = "macos") && std::path::Path::new("/Applications/LM Studio.app").exists() {
+        detached(Command::new("open").args(["-g", "-a", "LM Studio"]))?;
+        return Ok(true);
+    }
+    if cfg!(windows) {
+        if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+            let exe = std::path::Path::new(&local).join("Programs/LM Studio/LM Studio.exe");
+            if exe.exists() {
+                detached(&mut Command::new(exe))?;
+                return Ok(true);
+            }
+        }
+    }
+    Ok(false)
+}
+
+/// Makes sure the selected local provider (Ollama or LM Studio) is running, starting it if needed.
+/// With `only_if_configured`, nothing happens until the user has picked a model for that provider.
+pub async fn ensure_local_server(db: &Db, only_if_configured: bool) -> Option<LocalAiStatus> {
+    if setting(db, "ai.mode").unwrap_or_else(|| "local".into()) != "local" {
+        return None;
+    }
+    if setting(db, "ai.autostart").as_deref() == Some("false") {
+        return None;
+    }
+    let pid = setting(db, "ai.provider.local").unwrap_or_else(|| "ollama".into());
+    if pid != "ollama" && pid != "lmstudio" {
+        return None;
+    }
+    if only_if_configured && setting(db, &format!("ai.model.{pid}")).unwrap_or_default().is_empty() {
+        return None;
+    }
+    let prov = provider(&pid).ok()?;
+    let base = setting(db, &format!("ai.baseUrl.{pid}")).filter(|s| !s.trim().is_empty()).unwrap_or_else(|| prov.base_url.to_string());
+    if !is_local_url(&base) {
+        return None; // a server on another machine is not ours to start
+    }
+    let status = |state: &str, message: String| Some(LocalAiStatus { provider: prov.name.into(), state: state.into(), message });
+    if server_is_up(&base).await {
+        return status("running", format!("{} is running", prov.name));
+    }
+    let launched = if pid == "ollama" { launch_ollama() } else { launch_lmstudio() };
+    match launched {
+        Ok(false) => None, // not installed: stay quiet
+        Err(e) => status("failed", format!("Could not start {}: {e}", prov.name)),
+        Ok(true) => {
+            for _ in 0..30 {
+                tokio::time::sleep(Duration::from_millis(700)).await;
+                if server_is_up(&base).await {
+                    return status("started", format!("Started {}", prov.name));
+                }
+            }
+            if pid == "lmstudio" {
+                status("failed", "LM Studio was opened, but its local server is not running. Start it in LM Studio's Developer tab.".into())
+            } else {
+                status("failed", format!("{} was launched but is not answering yet", prov.name))
+            }
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn ai_ensure_local(db: State<'_, Db>) -> Result<Option<LocalAiStatus>> {
+    Ok(ensure_local_server(&db, false).await)
+}
+
 // ---------- llama.cpp (GGUF) ----------
 
 #[derive(Default)]

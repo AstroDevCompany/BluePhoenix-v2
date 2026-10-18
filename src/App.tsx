@@ -1,3 +1,4 @@
+import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { HashRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { CommandPalette } from "./components/CommandPalette";
@@ -18,6 +19,15 @@ function Shell() {
   useEffect(() => {
     setNavigator(navigate);
   }, [navigate]);
+
+  useEffect(() => {
+    const un = listen<{ provider: string; state: string; message: string }>("local-ai", (e) => {
+      const { state, message } = e.payload;
+      if (state === "started") useStore.getState().toast({ kind: "success", title: message, detail: "Local AI is ready." });
+      if (state === "failed") useStore.getState().toast({ kind: "error", title: "Local AI is not available", detail: message });
+    });
+    return () => void un.then((f) => f());
+  }, []);
 
   useEffect(() => {
     void init().then(() => {

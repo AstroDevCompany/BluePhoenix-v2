@@ -31,12 +31,14 @@ Open **Settings → AI**.
 1. Install it from [ollama.com](https://ollama.com).
 2. In a terminal run `ollama pull llama3.2` (or any model you like).
 3. In BluePhoenix choose **Local → Ollama**, press **Load models**.
+4. From then on BluePhoenix **starts Ollama for you** when it opens, if it is not already running. Turn this off with **Start Ollama with BluePhoenix** in the same settings section. BluePhoenix leaves Ollama running when you quit it.
 
 **LM Studio**
 
 1. Install [LM Studio](https://lmstudio.ai), download a model, and open the **Developer** tab.
 2. Start the local server (default `http://localhost:1234`).
 3. Choose **Local → LM Studio**, press **Load models**.
+4. BluePhoenix tries to start LM Studio's server when it opens (it uses LM Studio's `lms` command if you have it). If LM Studio only opens, start the server in the Developer tab.
 
 **llama.cpp with a GGUF file**
 
