@@ -15,6 +15,10 @@ Your default editor and terminal, and where the **Run** buttons start commands (
 
 Local or cloud provider, model, API key. See [AI features](ai.md).
 
+## Command line
+
+Install, reinstall or remove the `bluephoenix` terminal command. See [Command line](cli.md).
+
 ## Cloud sync
 
 Connect your own database to keep projects, to-dos and time in sync across your computers and iPhone. See [Cloud sync and the iPhone app](sync.md).

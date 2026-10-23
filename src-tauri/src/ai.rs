@@ -205,10 +205,21 @@ pub async fn ai_complete(
     max_tokens: Option<u32>,
     json_mode: Option<bool>,
 ) -> Result<String> {
-    let r = resolve(&db)?;
+    complete(&db, &system, &prompt, max_tokens, json_mode.unwrap_or(false)).await
+}
+
+/// "Provider · model" of the AI setup saved in Settings, or the reason it is unusable.
+pub fn active_model(db: &Db) -> Result<String> {
+    let r = resolve(db)?;
+    Ok(format!("{} · {}", r.prov.name, r.model))
+}
+
+/// Runs one completion with the provider and model saved in Settings (shared by the app and the CLI).
+pub async fn complete(db: &Db, system: &str, prompt: &str, max_tokens: Option<u32>, json_mode: bool) -> Result<String> {
+    let r = resolve(db)?;
     let client = http(600)?;
     if r.prov.protocol == "anthropic" {
-        let body = build_anthropic_body(&r.model, &system, &prompt, max_tokens.unwrap_or(4096));
+        let body = build_anthropic_body(&r.model, system, prompt, max_tokens.unwrap_or(4096));
         let resp = auth(client.post(format!("{}/messages", r.base)), &r.prov, r.key.as_deref())
             .json(&body)
             .send()
@@ -224,15 +235,15 @@ pub async fn ai_complete(
             .unwrap_or_default();
         return Ok(text);
     }
-    let body = build_openai_body(&r.model, &system, &prompt, json_mode.unwrap_or(false));
+    let body = build_openai_body(&r.model, system, prompt, json_mode);
     let mut resp = auth(client.post(format!("{}/chat/completions", r.base)), &r.prov, r.key.as_deref())
         .json(&body)
         .send()
         .await
         .map_err(|e| connect_hint(e, &r.prov))?;
     // Some servers reject response_format; retry once without it.
-    if !resp.status().is_success() && json_mode.unwrap_or(false) {
-        let retry = build_openai_body(&r.model, &system, &prompt, false);
+    if !resp.status().is_success() && json_mode {
+        let retry = build_openai_body(&r.model, system, prompt, false);
         resp = auth(client.post(format!("{}/chat/completions", r.base)), &r.prov, r.key.as_deref())
             .json(&retry)
             .send()

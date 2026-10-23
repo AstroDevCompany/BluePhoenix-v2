@@ -320,7 +320,12 @@ pub fn detect_dir(dir: &Path) -> Detected {
 
 #[tauri::command]
 pub async fn detect_project(path: String) -> Result<Detected> {
-    let dir = Path::new(&path);
+    detect_path(&path).await
+}
+
+/// Detects type, description, GitHub remote and commands of the project in `path`.
+pub async fn detect_path(path: &str) -> Result<Detected> {
+    let dir = Path::new(path);
     if !dir.is_dir() {
         return err("That folder does not exist");
     }
@@ -329,7 +334,7 @@ pub async fn detect_project(path: String) -> Result<Detected> {
     if d.is_git {
         if let Ok(o) = tokio::process::Command::new("git")
             .arg("-C")
-            .arg(&path)
+            .arg(path)
             .args(["remote", "get-url", "origin"])
             .output()
             .await

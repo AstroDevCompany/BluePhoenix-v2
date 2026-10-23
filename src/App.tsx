@@ -29,6 +29,13 @@ function Shell() {
     return () => void un.then((f) => f());
   }, []);
 
+  // `bluephoenix add` writes to the same database from a terminal; pick that up when the window regains focus.
+  useEffect(() => {
+    const onFocus = () => void useStore.getState().loadProjects();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
   useEffect(() => {
     void init().then(() => {
       if ((useStore.getState().settings.autoUpdate ?? "true") !== "true") return;

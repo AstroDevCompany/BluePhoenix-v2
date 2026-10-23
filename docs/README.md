@@ -22,6 +22,7 @@ BluePhoenix is a project manager for developers (and for anything else you work 
 - [Cloud sync and the iPhone app](sync.md): keep everything in step on all your devices
 - [AI features](ai.md): local models (Ollama, LM Studio, llama.cpp) and cloud providers
 - [Command palette](command-palette.md): do anything from the keyboard
+- [Command line](cli.md): `bluephoenix commit` and `bluephoenix add` from any terminal
 
 **Setup and help**
 

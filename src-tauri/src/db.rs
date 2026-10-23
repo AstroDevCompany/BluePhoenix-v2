@@ -174,6 +174,10 @@ pub struct TimeEntry {
 
 #[tauri::command]
 pub async fn projects_list(db: State<'_, Db>) -> Result<Vec<ProjectSummary>> {
+    list_projects(&db)
+}
+
+pub fn list_projects(db: &Db) -> Result<Vec<ProjectSummary>> {
     let conn = db.0.lock().unwrap();
     let mut stmt = conn.prepare(
         "SELECT p.*,
@@ -203,6 +207,10 @@ pub async fn projects_list(db: State<'_, Db>) -> Result<Vec<ProjectSummary>> {
 
 #[tauri::command]
 pub async fn project_save(db: State<'_, Db>, project: Project) -> Result<Project> {
+    save_project(&db, project)
+}
+
+pub fn save_project(db: &Db, project: Project) -> Result<Project> {
     let conn = db.0.lock().unwrap();
     let t = now();
     conn.execute(
@@ -271,6 +279,10 @@ pub async fn commands_list(db: State<'_, Db>, project_id: String) -> Result<Vec<
 
 #[tauri::command]
 pub async fn command_save(db: State<'_, Db>, command: Command) -> Result<()> {
+    save_command(&db, &command)
+}
+
+pub fn save_command(db: &Db, command: &Command) -> Result<()> {
     let conn = db.0.lock().unwrap();
     conn.execute(
         "INSERT INTO commands(id,project_id,label,command,cwd,source,sort,updated_at,deleted,dirty)
@@ -451,6 +463,10 @@ pub async fn settings_get_all(db: State<'_, Db>) -> Result<HashMap<String, Strin
 
 #[tauri::command]
 pub async fn settings_set(db: State<'_, Db>, key: String, value: String) -> Result<()> {
+    set_setting(&db, &key, &value)
+}
+
+pub fn set_setting(db: &Db, key: &str, value: &str) -> Result<()> {
     let conn = db.0.lock().unwrap();
     conn.execute(
         "INSERT INTO settings(key,value) VALUES(?1,?2) ON CONFLICT(key) DO UPDATE SET value=?2",

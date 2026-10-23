@@ -1,4 +1,6 @@
 mod ai;
+pub mod cli;
+mod cli_install;
 mod db;
 mod detect;
 mod error;
@@ -108,6 +110,11 @@ pub fn run() {
             build_main_window(app)?;
             sync::start_background(app.handle().clone());
             {
+                // Installs / repairs the `bluephoenix` terminal command in the background.
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn_blocking(move || cli_install::ensure_installed(&handle.state::<db::Db>()));
+            }
+            {
                 // Start Ollama / LM Studio together with BluePhoenix when it is the chosen local provider.
                 use tauri::Emitter;
                 let handle = app.handle().clone();
@@ -197,6 +204,10 @@ pub fn run() {
             sync::sync_now,
             sync::sync_disconnect,
             sync::sync_status,
+            // command line
+            cli_install::cli_status,
+            cli_install::cli_install,
+            cli_install::cli_uninstall,
             // updater
             updater::check_update,
             updater::download_update,

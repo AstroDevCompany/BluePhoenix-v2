@@ -32,51 +32,55 @@ pub async fn files_index(db: State<'_, Db>, project_id: String, path: String) ->
     if !root.is_dir() {
         return err("Project folder not found");
     }
-    let root2 = root.clone();
-    let (entries, truncated) = tokio::task::spawn_blocking(move || {
-        let mut v: Vec<FileEntry> = vec![];
-        let mut truncated = false;
-        let walker = ignore::WalkBuilder::new(&root2)
-            .hidden(false)
-            .require_git(false)
-            .filter_entry(|e| e.file_name() != ".git" && e.file_name() != "node_modules")
-            .build();
-        for e in walker.flatten() {
-            if !e.file_type().map(|t| t.is_file()).unwrap_or(false) {
-                continue;
-            }
-            if v.len() >= MAX_FILES {
-                truncated = true;
-                break;
-            }
-            let Ok(rel) = e.path().strip_prefix(&root2) else { continue };
-            let md = e.metadata().ok();
-            v.push(FileEntry {
-                rel_path: rel.to_string_lossy().replace('\\', "/"),
-                size: md.as_ref().map(|m| m.len() as i64).unwrap_or(0),
-                mtime: md
-                    .and_then(|m| m.modified().ok())
-                    .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-                    .map(|d| d.as_millis() as i64)
-                    .unwrap_or(0),
-            });
-        }
-        (v, truncated)
-    })
-    .await
-    .map_err(|e| e.to_string())?;
+    let (entries, truncated) = tokio::task::spawn_blocking(move || scan_files(&root)).await.map_err(|e| e.to_string())?;
+    store_files(&db, &project_id, &entries)?;
+    Ok(IndexResult { count: entries.len(), truncated })
+}
 
+/// Lists every file under `root` (respecting .gitignore); the bool tells whether the list was cut short.
+pub fn scan_files(root: &Path) -> (Vec<FileEntry>, bool) {
+    let mut v: Vec<FileEntry> = vec![];
+    let mut truncated = false;
+    let walker = ignore::WalkBuilder::new(root)
+        .hidden(false)
+        .require_git(false)
+        .filter_entry(|e| e.file_name() != ".git" && e.file_name() != "node_modules")
+        .build();
+    for e in walker.flatten() {
+        if !e.file_type().map(|t| t.is_file()).unwrap_or(false) {
+            continue;
+        }
+        if v.len() >= MAX_FILES {
+            truncated = true;
+            break;
+        }
+        let Ok(rel) = e.path().strip_prefix(root) else { continue };
+        let md = e.metadata().ok();
+        v.push(FileEntry {
+            rel_path: rel.to_string_lossy().replace('\\', "/"),
+            size: md.as_ref().map(|m| m.len() as i64).unwrap_or(0),
+            mtime: md
+                .and_then(|m| m.modified().ok())
+                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                .map(|d| d.as_millis() as i64)
+                .unwrap_or(0),
+        });
+    }
+    (v, truncated)
+}
+
+pub fn store_files(db: &Db, project_id: &str, entries: &[FileEntry]) -> Result<()> {
     let mut conn = db.0.lock().unwrap();
     let tx = conn.transaction()?;
     tx.execute("DELETE FROM files WHERE project_id=?1", params![project_id])?;
     {
         let mut stmt = tx.prepare("INSERT OR REPLACE INTO files(project_id,rel_path,size,mtime) VALUES(?1,?2,?3,?4)")?;
-        for f in &entries {
+        for f in entries {
             stmt.execute(params![project_id, f.rel_path, f.size, f.mtime])?;
         }
     }
     tx.commit()?;
-    Ok(IndexResult { count: entries.len(), truncated })
+    Ok(())
 }
 
 #[tauri::command]

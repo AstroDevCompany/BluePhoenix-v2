@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   AppInfo,
   Branch,
+  CliStatus,
   Command,
   Commit,
   Detected,
@@ -114,6 +115,11 @@ export const api = {
   syncNow: () => invoke<SyncReport>("sync_now"),
   syncDisconnect: () => invoke<void>("sync_disconnect"),
   syncStatus: () => invoke<SyncStatus>("sync_status"),
+
+  // command line
+  cliStatus: () => invoke<CliStatus>("cli_status"),
+  cliInstall: () => invoke<CliStatus>("cli_install"),
+  cliUninstall: () => invoke<CliStatus>("cli_uninstall"),
 
   // updater
   checkUpdate: () => invoke<UpdateInfo>("check_update"),

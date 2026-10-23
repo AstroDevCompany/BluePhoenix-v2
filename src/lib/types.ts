@@ -157,6 +157,13 @@ export interface UpdateInfo {
   downloadUrl: string | null;
 }
 
+export interface CliStatus {
+  installed: boolean;
+  upToDate: boolean;
+  path: string | null;
+  onPath: boolean;
+}
+
 export interface SystemInfo {
   platform: "macos" | "windows" | "linux";
   version: string;
